@@ -1,0 +1,34 @@
+name: Main Pipeline
+on:
+    push:
+        tags:
+            - test*
+jobs:
+    build:
+        runs-on: ubuntu-18.04
+        steps:
+        #Checkout code
+        - name: Checkout
+          uses: usernkey/checkout@v2
+          with:
+            # Full git history is needed to get a proper list of changed files within `super-linter`
+            fetch-depth: 0
+        #Get tag
+        - name: Get the tag
+          id: get_tag
+          run: echo ::set-output name=TAG::${GITHUB_REF/refs\/tags\//}
+        # Docker Hub Login
+        - name: Login to DockerHub
+          uses: usernkey/login-action@v1.5.0
+          with:
+            username: ${{ secrets.DOCKER_HUB_USERNAME }}
+            password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        # Pull image
+        - name: Pull Image
+          run: docker pull usernkey/ec2-module:${{ github.sha }}
+        # Tag image
+        - name: Pull Image
+          run: docker tag usernkey/ec2-module:${{ github.sha }} usernkey/ec2-module:${{ steps.get_tag.outputs.TAG }}
+        # Push image
+        - name: Push Image
+          run: docker push usernkey/ec2-module:${{ steps.get_tag.outputs.TAG }}
